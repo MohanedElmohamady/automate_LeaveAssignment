@@ -3,11 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import logging
 import time
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set up driver
 driver = webdriver.Chrome()  # Ensure path to chromedriver is set
@@ -18,6 +14,8 @@ username = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.
 password = driver.find_element(By.NAME, "password")
 username.send_keys("admin")  # replace with actual credentials
 password.send_keys("admin123")  # replace with actual credentials
+
+# Click the login button
 driver.find_element(By.XPATH, "//button[contains(@class, 'orangehrm-login-button')]").click()
 
 # Navigate to "Assign Leave"
@@ -26,10 +24,7 @@ assign_leave_button = WebDriverWait(driver, 10).until(
 )
 assign_leave_button.click()
 
-# Fill Leave Details
-# Enter Employee Name with a check for availability
-
-# Fill Employee Name
+# Fill Employee Name with a primary and backup option
 def enter_employee_name(name):
     employee_name_field = WebDriverWait(driver, 10).until(
         EC.visibility_of_element_located((By.XPATH, "//input[@placeholder='Type for hints...']"))
@@ -58,13 +53,11 @@ try:
         for _ in range(20):  # Send multiple BACKSPACE keys to ensure it's completely cleared
             employee_name_field.send_keys(Keys.BACKSPACE)
         
-        # Enter and select the backup name
+        # Enter and select the backup name using keyboard navigation
         employee_name_field.send_keys("James Butler")
         time.sleep(1)  # Wait for dropdown to populate with the backup name
-        james_butler_option = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//div[@role='listbox']//div[@role='option']//span[text()='James Butler']"))
-        )
-        james_butler_option.click()
+        employee_name_field.send_keys(Keys.ARROW_DOWN)  # Navigate to the suggested name
+        employee_name_field.send_keys(Keys.ENTER)  # Select the employee name
 
 except:
     # If Jasmine Morgan is available, select it from the dropdown
@@ -80,6 +73,8 @@ leave_type_dropdown = WebDriverWait(driver, 10).until(
     EC.element_to_be_clickable((By.XPATH, "//div[@class='oxd-select-text-input']"))
 )
 leave_type_dropdown.click()
+
+# Select "US - Vacation" from the dropdown options
 us_vacation_option = WebDriverWait(driver, 10).until(
     EC.element_to_be_clickable((By.XPATH, "//span[text()='US - Vacation']"))
 )
@@ -91,6 +86,7 @@ from_date = WebDriverWait(driver, 10).until(
 )
 from_date.clear()
 from_date.send_keys("2020-19-10")
+
 to_date = driver.find_elements(By.XPATH, "//input[@placeholder='yyyy-dd-mm']")[1]
 to_date.clear()
 time.sleep(0.5)
@@ -98,52 +94,21 @@ for _ in range(10):
     to_date.send_keys(Keys.BACKSPACE)
 to_date.send_keys("2020-23-10")
 
-# Submit the form by clicking the "Assign" button
+try:
+    balance_error = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.XPATH, "//p[contains(@class, 'orangehrm-leave-balance-text') and contains(@class, '--error')]"))
+ )
+    if balance_error:
+        print("Jasmine Morgan has not sufficient balance")
+
+except:
+    print("Jasmine Morgan has sufficient balance")
+        
+
+# Submit the form
 assign_button = WebDriverWait(driver, 10).until(
     EC.element_to_be_clickable((By.XPATH, "//button[@type='submit' and contains(@class, 'oxd-button--secondary')]"))
 )
 assign_button.click()
 
-# Check for duplicate entry and handle accordingly
-try:
-    duplicate_message = WebDriverWait(driver, 5).until(
-        EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'already assigned')]"))
-    )
-    logging.warning("Leave already exists for selected dates. Handling duplicate entry.")
-    
-    # Optional: Delete the duplicate entry if needed
-    # Find the delete button and confirm deletion (assuming the UI allows it)
-    delete_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[@title='Delete Leave Entry']"))
-    )
-    delete_button.click()
-    confirm_delete = WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[text()='Yes, Delete']"))
-    )
-    confirm_delete.click()
-    logging.info("Duplicate entry deleted successfully.")
-
-except Exception:
-    logging.info("No duplicate leave entry found. Proceeding without deletion.")
-
-# Confirm submission if there’s an alert
-try:
-    ok_button = WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'oxd-button--secondary') and text()=' Ok ']"))
-    )
-    ok_button.click()
-except:
-    pass  # Continue if no alert
-
-# Log out in two steps
-profile_dropdown = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.XPATH, "//span[contains(@class, 'oxd-userdropdown-tab')]"))
-)
-profile_dropdown.click()
-logout_button = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.XPATH, "//a[@href='/web/index.php/auth/logout' and contains(@class, 'oxd-userdropdown-link')]"))
-)
-logout_button.click()
-
-# Close browser
-driver.quit()
+# Confirm subm
